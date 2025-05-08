@@ -1,5 +1,5 @@
 
-You're on 🔥! Exploring arrays vs slices in Go is **super important** — it’s a common area for **interview questions, tricky bugs**, and deep understanding of how Go handles memory. Let's break it **step-by-step** so even a fresher in India can visualize and remember it forever. 🧠💡
+You're on 🔥! Exploring arrays vs slices in Go is **super important** — it’s a common area for **interview questions, tricky bugs**, and deep understanding of how Go handles memory. Let's break it **step-by-step** so even a fresher can visualize and remember it forever. 🧠💡
 
 ---
 
