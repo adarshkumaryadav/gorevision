@@ -179,3 +179,121 @@ But real use is with type assertions or reflection (advanced).
 4. Pass them to a function that accepts `Animal`
 
 ---
+```go
+// go-interface-example/database/database.go
+package database
+
+// Database interface defines the contract (POLYMORPHISM)
+// This is similar to abstract classes in OOPs (Java/C++)
+type Database interface {
+	Close()
+	SelectUser(userID int)
+	CreateUser(name string)
+}
+
+// go-interface-example/database/mysql.go
+package database
+
+import "fmt"
+
+type MySQL struct{}
+
+func NewMySQL() *MySQL {
+	return &MySQL{}
+}
+
+func (m *MySQL) Close() {
+	fmt.Println("MySQL: Connection closed")
+}
+
+func (m *MySQL) SelectUser(userID int) {
+	fmt.Printf("MySQL: Selected user with ID %d\n", userID)
+}
+
+func (m *MySQL) CreateUser(name string) {
+	fmt.Printf("MySQL: Created user %s\n", name)
+}
+
+// go-interface-example/database/postgres.go
+package database
+
+import "fmt"
+
+type Postgres struct{}
+
+func NewPostgres() *Postgres {
+	return &Postgres{}
+}
+
+func (p *Postgres) Close() {
+	fmt.Println("Postgres: Connection closed")
+}
+
+func (p *Postgres) SelectUser(userID int) {
+	fmt.Printf("Postgres: Selected user with ID %d\n", userID)
+}
+
+func (p *Postgres) CreateUser(name string) {
+	fmt.Printf("Postgres: Created user %s\n", name)
+}
+
+// go-interface-example/database/mongo.go
+package database
+
+import "fmt"
+
+type Mongo struct{}
+
+func NewMongo() *Mongo {
+	return &Mongo{}
+}
+
+func (m *Mongo) Close() {
+	fmt.Println("MongoDB: Connection closed")
+}
+
+func (m *Mongo) SelectUser(userID int) {
+	fmt.Printf("MongoDB: Selected user with ID %d\n", userID)
+}
+
+func (m *Mongo) CreateUser(name string) {
+	fmt.Printf("MongoDB: Created user %s\n", name)
+}
+
+// go-interface-example/main.go
+package main
+
+import (
+	"fmt"
+	"golang_interface_example/database"
+)
+
+// MyApp uses a Database interface, not concrete type
+// This supports dependency injection, loose coupling and easy testing
+type MyApp struct {
+	db database.Database
+}
+
+// NewApp initializes the application with any database that satisfies Database interface
+func NewApp(db database.Database) *MyApp {
+	return &MyApp{db: db}
+}
+
+// Run method demonstrates usage of the interface methods
+func (a *MyApp) Run() {
+	a.db.CreateUser("Adarsh")
+	a.db.SelectUser(101)
+	a.db.Close()
+}
+
+func main() {
+	// Swap different DBs easily without changing MyApp
+	fmt.Println("--- Running with MongoDB ---")
+	db := database.NewMongo()
+	// You can change above to NewMySQL() or NewPostgres() without any code change in MyApp
+
+	app := NewApp(db)
+	app.Run()
+}
+
+```
