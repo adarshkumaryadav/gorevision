@@ -322,3 +322,150 @@ func main() {
 * Use `sync.WaitGroup` to safely wait for goroutines to finish.
 
 ---
+📌 When to use RWMutex?
+Use it when:
+
+You have frequent reads and rare writes
+
+You want to allow multiple reads in parallel, but writes should be exclusive
+| Lock Type | Purpose                        | Allows             | Blocks              |
+| --------- | ------------------------------ | ------------------ | ------------------- |
+| `RLock()` | Read-only access (multiple OK) | ✅ Multiple readers | ❌ Writers           |
+| `Lock()`  | Write access (exclusive)       | ❌ Only one writer  | ❌ Readers & Writers |
+
+
+---
+
+## 🟢 Goroutine Leaks
+
+**What it is**
+A goroutine leak happens when you spawn a goroutine that never exits because its work channel or cancellation condition never arrives. Over time, leaked goroutines consume memory and CPU.
+
+**Example of a leak**
+
+```go
+func worker(jobs <-chan int) {
+  for j := range jobs { // if `jobs` is never closed, this never returns
+    _ = j * j
+  }
+}
+```
+
+**Prevention**
+
+* Always close your work channels when done.
+* Or, use a `context.Context` and inside your loop:
+
+  ```go
+  select {
+  case <-ctx.Done(): return
+  case j := <-jobs: …
+  }
+  ```
+
+**Interview Q**
+
+> How do you detect and prevent goroutine leaks in Go?
+
+---
+
+## 🟢 Real-World Patterns
+
+### 1. Job Queue + Worker Pool
+
+* Jobs are sent into a channel.
+* A fixed set of goroutines (“workers”) range over it and process items.
+* Close the channel when no more jobs; workers exit.
+
+### 2. Observability
+
+* Track metrics (counters, histograms) inside your workers with `expvar` or Prometheus.
+* E.g., increment a global counter each time a job completes.
+
+### 3. Graceful Shutdown
+
+* On `SIGINT`/`SIGTERM`, stop accepting new work, signal workers (via `context`), wait for them to finish, then exit.
+* In HTTP servers: call `server.Shutdown(ctx)` so in-flight requests complete.
+
+**Interview Q**
+
+> Describe how you’d implement a graceful shutdown of a worker pool on Ctrl+C.
+
+---
+
+## 🟢 Benchmarking (`go test -bench`)
+
+**What it is**
+Measure how fast a piece of code runs—useful to compare approaches (e.g., mutex vs. channel).
+
+**Basic benchmark**
+
+```go
+func BenchmarkMutex(b *testing.B) {
+  var mu sync.Mutex
+  cnt := 0
+  for i := 0; i < b.N; i++ {
+    mu.Lock()
+    cnt++
+    mu.Unlock()
+  }
+}
+```
+
+Run with:
+
+```bash
+go test -bench=.  
+```
+
+**Interview Q**
+
+> How would you benchmark and compare two different concurrency approaches in Go?
+
+---
+
+## 🟢 `sync.Mutex` vs `sync.RWMutex`
+
+* **`sync.Mutex`**: only one goroutine at a time (both readers and writers block).
+* **`sync.RWMutex`**: multiple readers allowed in parallel (`RLock`), but writers (`Lock`) are exclusive.
+
+**RWMutex Example**
+
+```go
+var mu sync.RWMutex
+var data map[string]int
+
+// reader
+mu.RLock()
+_ = data["key"]
+mu.RUnlock()
+
+// writer
+mu.Lock()
+data["key"] = 42
+mu.Unlock()
+```
+
+**Interview Q**
+
+> When would you choose an `RWMutex` over a plain `Mutex`?
+
+---
+
+## 🟢 Channel vs Mutex (When to Use Which)
+
+* **Channels**: great for passing ownership of data and building pipelines/fan-in-out.
+* **Mutexes**: simpler for protecting small shared data (counters, maps).
+
+**Guideline**
+
+* Use channels to coordinate **work** between goroutines.
+* Use a mutex when multiple goroutines need **shared access** to a variable.
+
+**Interview Q**
+
+> Can you give an example where a mutex is more appropriate than a channel, and vice versa?
+
+---
+
+These add-on topics round out your concurrency toolkit—perfect for both real-world Go systems and senior-level interviews. Good luck!
